@@ -1,0 +1,27 @@
+# Composer
+/vendor/
+composer.lock
+
+# Node
+/node_modules/
+/assets/build/
+
+# PHPUnit
+/.phpunit.cache/
+/tests/.phpunit.result.cache
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+
+# Build artifacts
+*.zip
+
+# WP test suite (local path)
+/tmp/
