@@ -31,3 +31,7 @@ if ( ! defined( 'HEADLESS_WP_PLUGIN_URL' ) ) {
 if ( ! defined( 'HEADLESS_WP_PLUGIN_BASE' ) ) {
 	define( 'HEADLESS_WP_PLUGIN_BASE', 'headless-wp/headless-wp.php' );
 }
+
+// ── Stubs ligeros de clases WordPress usadas en tests unitarios ───────────────
+// Permiten instanciar WP_REST_Request / WP_REST_Response sin cargar WordPress.
+require_once __DIR__ . '/stubs/wp-classes.php';

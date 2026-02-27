@@ -1,0 +1,193 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "hwp/api-response",
+  "title": "Headless WP — API Response Envelope",
+  "description": "Estructura base de todas las respuestas del namespace hwp/v1",
+  "type": "object",
+  "required": ["success", "data", "timestamp", "version"],
+
+  "properties": {
+
+    "success": {
+      "type": "boolean",
+      "description": "true si el request fue procesado sin errores de negocio"
+    },
+
+    "data": {
+      "description": "Payload principal. Array en listados, objeto en single, null en errores.",
+      "oneOf": [
+        { "type": "array",  "items": { "$ref": "#/$defs/resource" } },
+        { "$ref": "#/$defs/resource" },
+        { "type": "null" }
+      ]
+    },
+
+    "meta": {
+      "$ref": "#/$defs/meta",
+      "description": "Metadatos de paginación y contexto. Solo presente en listados."
+    },
+
+    "links": {
+      "$ref": "#/$defs/links",
+      "description": "URLs de navegación HATEOAS. Solo presente en listados."
+    },
+
+    "error": {
+      "$ref": "#/$defs/error",
+      "description": "Detalle del error. Solo presente cuando success=false."
+    },
+
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC del momento en que se generó la respuesta"
+    },
+
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$",
+      "description": "Versión semántica del plugin que generó la respuesta"
+    }
+  },
+
+  "$defs": {
+
+    "resource": {
+      "type": "object",
+      "description": "Representación de un recurso WordPress (post, term, user, etc.)",
+      "required": ["id", "type"],
+      "properties": {
+        "id":          { "type": "integer", "minimum": 1 },
+        "type":        { "type": "string", "description": "post_type o entidad" },
+        "slug":        { "type": "string" },
+        "status":      { "type": "string" },
+        "created_at":  { "type": "string", "format": "date-time" },
+        "updated_at":  { "type": "string", "format": "date-time" },
+        "fields":      {
+          "type": "object",
+          "description": "Campos expuestos según configuración del endpoint",
+          "additionalProperties": true
+        },
+        "taxonomies":  {
+          "type": "object",
+          "description": "Términos agrupados por taxonomía",
+          "additionalProperties": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/term" }
+          }
+        },
+        "media":       { "$ref": "#/$defs/media" }
+      },
+      "additionalProperties": false
+    },
+
+    "term": {
+      "type": "object",
+      "required": ["id", "slug", "name"],
+      "properties": {
+        "id":     { "type": "integer" },
+        "slug":   { "type": "string" },
+        "name":   { "type": "string" },
+        "parent": { "type": ["integer", "null"] }
+      },
+      "additionalProperties": false
+    },
+
+    "media": {
+      "type": "object",
+      "description": "Imagen destacada u otros adjuntos asociados al recurso",
+      "properties": {
+        "featured": {
+          "type": ["object", "null"],
+          "properties": {
+            "id":     { "type": "integer" },
+            "url":    { "type": "string", "format": "uri" },
+            "alt":    { "type": "string" },
+            "width":  { "type": "integer" },
+            "height": { "type": "integer" },
+            "sizes":  {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "properties": {
+                  "url":    { "type": "string", "format": "uri" },
+                  "width":  { "type": "integer" },
+                  "height": { "type": "integer" }
+                }
+              }
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+
+    "meta": {
+      "type": "object",
+      "required": ["total", "page", "per_page", "total_pages"],
+      "properties": {
+        "total":       { "type": "integer", "minimum": 0 },
+        "page":        { "type": "integer", "minimum": 1 },
+        "per_page":    { "type": "integer", "minimum": 1, "maximum": 100 },
+        "total_pages": { "type": "integer", "minimum": 0 },
+        "filtered":    { "type": "boolean", "description": "true si hay query params activos" },
+        "cached":      { "type": "boolean", "description": "true si la respuesta viene de cache" },
+        "cache_age_s": { "type": "integer", "description": "Segundos desde que se generó el cache" }
+      },
+      "additionalProperties": false
+    },
+
+    "links": {
+      "type": "object",
+      "required": ["self"],
+      "properties": {
+        "self":  { "type": "string", "format": "uri" },
+        "first": { "type": ["string", "null"], "format": "uri" },
+        "prev":  { "type": ["string", "null"], "format": "uri" },
+        "next":  { "type": ["string", "null"], "format": "uri" },
+        "last":  { "type": ["string", "null"], "format": "uri" }
+      },
+      "additionalProperties": false
+    },
+
+    "error": {
+      "type": "object",
+      "required": ["code", "message", "status"],
+      "properties": {
+        "code":    {
+          "type": "string",
+          "description": "Código machine-readable. Ej: hwp_unauthorized, hwp_rate_limit_exceeded",
+          "enum": [
+            "hwp_unauthorized",
+            "hwp_forbidden",
+            "hwp_not_found",
+            "hwp_validation_error",
+            "hwp_rate_limit_exceeded",
+            "hwp_invalid_token",
+            "hwp_token_expired",
+            "hwp_token_revoked",
+            "hwp_endpoint_disabled",
+            "hwp_method_not_allowed",
+            "hwp_server_error"
+          ]
+        },
+        "message": { "type": "string" },
+        "status":  { "type": "integer", "minimum": 400, "maximum": 599 },
+        "details": {
+          "type": "array",
+          "description": "Lista de errores de validación campo a campo",
+          "items": {
+            "type": "object",
+            "properties": {
+              "field":   { "type": "string" },
+              "message": { "type": "string" },
+              "code":    { "type": "string" }
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

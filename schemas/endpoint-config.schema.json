@@ -1,0 +1,107 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "hwp/endpoint-config",
+  "title": "Headless WP — Endpoint Configuration",
+  "description": "Schema del JSON config almacenado en hwp_endpoints.config",
+  "type": "object",
+
+  "properties": {
+
+    "query_defaults": {
+      "type": "object",
+      "description": "Argumentos base para WP_Query",
+      "properties": {
+        "posts_per_page": { "type": "integer", "minimum": 1, "maximum": 100, "default": 10 },
+        "orderby":        { "type": "string", "enum": ["date","modified","title","menu_order","rand","ID","relevance"], "default": "date" },
+        "order":          { "type": "string", "enum": ["ASC","DESC"], "default": "DESC" },
+        "post_status":    { "type": "array", "items": { "type": "string" }, "default": ["publish"] }
+      },
+      "additionalProperties": false
+    },
+
+    "allowed_query_params": {
+      "type": "array",
+      "description": "Query params que el cliente puede enviar. Todo lo demás se ignora.",
+      "items": { "type": "string" },
+      "uniqueItems": true,
+      "default": ["page", "per_page", "search", "orderby", "order"]
+    },
+
+    "param_map": {
+      "type": "object",
+      "description": "Mapea query_param → argumento WP_Query. Ej: {\"category\": \"category_name\"}",
+      "additionalProperties": { "type": "string" }
+    },
+
+    "single_mode": {
+      "type": "boolean",
+      "description": "Si true, registra también /slug/{id} para recurso individual",
+      "default": true
+    },
+
+    "auth_override": {
+      "type": ["string", "null"],
+      "description": "Forzar estrategia de auth para este endpoint. null = global.",
+      "enum": ["jwt", "api_key", "app_password", "basic_auth", "none", null],
+      "default": null
+    },
+
+    "cache_ttl": {
+      "type": "integer",
+      "description": "Segundos. 0 deshabilita el cache para este endpoint.",
+      "minimum": 0,
+      "maximum": 86400,
+      "default": 300
+    },
+
+    "schema_validation": {
+      "type": "boolean",
+      "description": "Validar body POST/PUT contra JSON Schema antes de ejecutar",
+      "default": true
+    },
+
+    "rate_limit": {
+      "type": "object",
+      "properties": {
+        "max_requests":    { "type": "integer", "minimum": 1, "default": 60 },
+        "window_seconds":  { "type": "integer", "minimum": 1, "default": 60 },
+        "strategy":        { "type": "string", "enum": ["fixed_window", "sliding_window"], "default": "fixed_window" }
+      },
+      "additionalProperties": false
+    },
+
+    "image_upload": {
+      "type": "object",
+      "properties": {
+        "enabled":       { "type": "boolean", "default": false },
+        "max_size_kb":   { "type": "integer", "minimum": 1, "default": 2048 },
+        "allowed_mime":  {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": ["image/jpeg","image/png","image/webp","image/gif"]
+        },
+        "auto_attach":   { "type": "boolean", "description": "Asociar adjunto al post del body", "default": true }
+      },
+      "additionalProperties": false
+    },
+
+    "response_envelope": {
+      "type": "object",
+      "description": "Personalización del envelope de respuesta",
+      "properties": {
+        "include_links": { "type": "boolean", "default": true },
+        "include_meta":  { "type": "boolean", "default": true },
+        "data_key":      { "type": "string", "description": "Nombre de la clave de datos. Default: 'data'", "default": "data" }
+      },
+      "additionalProperties": false
+    },
+
+    "version": {
+      "type": "string",
+      "description": "Versión interna de esta configuración (para migraciones futuras)",
+      "default": "1"
+    }
+  },
+
+  "additionalProperties": false
+}
