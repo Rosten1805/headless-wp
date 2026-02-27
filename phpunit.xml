@@ -27,6 +27,6 @@
     </source>
 
     <php>
-        <const name="HEADLESS_WP_VERSION" value="0.2.0"/>
+        <const name="HEADLESS_WP_VERSION" value="0.3.0"/>
     </php>
 </phpunit>
